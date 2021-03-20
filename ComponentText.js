@@ -17,6 +17,8 @@ const template = createTemplate(`
         box-sizing: border-box;
         border: 1px solid black;
         background-color: white;
+        padding: 0.5rem;
+        font-weight: bold;
       }
     </style>
     <div class="box">
