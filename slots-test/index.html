@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <title>Test</title>
+</head>
+<script type="module">
+  import { Component2 } from '../Component2.js'
+
+  customElements.define('test-component', Component2)
+</script>
+<body>
+  <test-component>
+    A
+    B
+    <div slot="slot2">1</div>
+    <div slot="slot2">2</div>
+    C
+  </test-component>
+</body>
+</html>

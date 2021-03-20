@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <title>Page builder</title>
+  <style>
+    .page {
+      border: 1px solid black;
+      margin-bottom: 1rem;
+    }
+
+    .drop-zone {
+      border: 1px dashed black;
+      background-color: gray;
+      height: 2rem;
+    }
+  </style>
+
+  <script type="module">
+    import { createDOM } from './createDOM.js'
+    import { Component } from './Component.js'
+    import { Component2 } from './Component2.js'
+    import { ComponentText } from './ComponentText.js'
+
+    customElements.define('page-builder-component', Component)
+    customElements.define('page-builder-component2', Component2)
+    customElements.define('page-builder-component-text', ComponentText)
+
+    function main() {
+      let isDragging = false
+
+      const components = [
+        {
+          id: 'page-builder-component',
+          html: '<page-builder-component></page-builder-component>',
+          slots: {
+            default: {}
+          }
+        },
+        {
+          id: 'page-builder-component2',
+          html: '<page-builder-component2></page-builder-component2>',
+          slots: {
+            default: {},
+            slot2: {}
+          }
+        },
+        {
+          id: 'page-builder-component-text',
+          html: '<page-builder-component-text></page-builder-component-text>',
+          slots: {
+            default: {
+              editable: true
+            }
+          }
+        }
+      ]
+
+      const $components = document.querySelector('.components')
+
+      for (const component of components) {
+        const $component = createDOM(component.html).body.children[0]
+        $component.setAttribute('data-id', component.id)
+        $component.draggable = true
+
+        for (const [slotName, slot] of Object.entries(component.slots)) {
+          const dropZone = createDropZone()
+          if (slotName !== 'default') {
+            dropZone.slot = slotName
+          }
+          $component.appendChild(dropZone)
+        }
+
+        $components.appendChild($component)
+      }
+
+      for (const component of $components.children) {
+        component.addEventListener('dragstart', function (event) {
+          console.log('dragstart', event)
+          event.dataTransfer.setData(
+            'text/plain',
+            event.target.getAttribute('data-id')
+          )
+          event.dataTransfer.dropEffect = 'copy'
+        })
+
+        component.addEventListener('dragend', function (event) {
+          console.log('dragend', event)
+        })
+      }
+
+      const page = document.querySelector('.page')
+
+      let dropZone = null
+
+      page.addEventListener('dragover', function (event) {
+        console.log('dragover', event)
+        event.preventDefault()
+        event.dataTransfer.dropEffect = 'copy'
+
+        // if (!dropZone) {
+        //   dropZone = createDropZone()
+        //   page.appendChild(dropZone)
+        // }
+      })
+
+      page.addEventListener('dragleave', function (event) {
+        console.log('dragleave', event)
+        // removeDropZone()
+      })
+
+      page.addEventListener('drop', function (event) {
+        console.log('drop', event)
+        event.preventDefault()
+        const target = event.target
+        if (target.classList.contains('drop-zone')) {
+          const componentId = event.dataTransfer.getData('text/plain')
+          const component = getComponent(componentId)
+          const componentHTML = component.html
+          const componentInstance = createDOM(componentHTML).body.children[0]
+
+          for (const [slotName, slot] of Object.entries(component.slots)) {
+            if (slot.editable) {
+              const editableZone = document.createElement('div')
+              editableZone.classList.add('editable-zone')
+              editableZone.contentEditable = true
+              componentInstance.appendChild(editableZone)
+            } else {
+              const dropZone = createDropZone()
+              if (slotName !== 'default') {
+                dropZone.slot = slotName
+              }
+              componentInstance.appendChild(dropZone)
+            }
+          }
+
+          if (target.slot) {
+            componentInstance.slot = target.slot
+          }
+          target.replaceWith(componentInstance)
+
+          const dropZone1 = createDropZone()
+          dropZone1.slot = componentInstance.slot
+          componentInstance.insertAdjacentElement(
+            'beforebegin',
+            dropZone1
+          )
+
+          const dropZone2 = createDropZone()
+          dropZone2.slot = componentInstance.slot
+          componentInstance.insertAdjacentElement(
+            'afterend',
+            dropZone2
+          )
+
+          // removeDropZone()
+        }
+      })
+
+      function createDropZone() {
+        const dropZone = document.createElement('div')
+        dropZone.classList.add('drop-zone')
+        return dropZone
+      }
+
+      function removeDropZone() {
+        if (dropZone) {
+          dropZone.remove()
+          dropZone = null
+        }
+      }
+
+      function getComponent(id) {
+        return components.find(component => component.id === id)
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', main)
+  </script>
+</head>
+<body>
+  <div class="page">
+    <div class="drop-zone"></div>
+  </div>
+
+  <div class="components"></div>
+</body>
+</html>
