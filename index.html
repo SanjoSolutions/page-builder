@@ -65,6 +65,9 @@
           }
         }
       ]
+      const componentsMap = new Map(
+        components.map(component => [component.id, component])
+      )
 
       const $components = document.querySelector('.components')
 
@@ -106,15 +109,30 @@
       page.addEventListener('dragover', function (event) {
         console.log('dragover', event)
         event.preventDefault()
-        event.dataTransfer.dropEffect = 'copy'
 
-        event.target.classList.add('drop-zone--drag-over')
+        const target = event.target
+        if (target.classList.contains('drop-zone')) {
+          const componentId = event.dataTransfer.getData('text/plain')
+          const component = getComponent(componentId)
+          if (component) {
+            event.dataTransfer.dropEffect = 'copy'
+
+            event.target.classList.add('drop-zone--drag-over')
+          }
+        }
       })
 
       page.addEventListener('dragleave', function (event) {
         console.log('dragleave', event)
 
-        event.target.classList.remove('drop-zone--drag-over')
+        const target = event.target
+        if (target.classList.contains('drop-zone')) {
+          const componentId = event.dataTransfer.getData('text/plain')
+          const component = getComponent(componentId)
+          if (component) {
+            target.classList.remove('drop-zone--drag-over')
+          }
+        }
       })
 
       page.addEventListener('drop', function (event) {
@@ -124,43 +142,50 @@
         if (target.classList.contains('drop-zone')) {
           const componentId = event.dataTransfer.getData('text/plain')
           const component = getComponent(componentId)
-          const componentHTML = component.html
-          const componentInstance = createDOM(componentHTML).body.children[0]
+          if (component) {
+            const componentHTML = component.html
+            const componentInstance = createDOM(componentHTML).body.children[0]
 
-          for (const [slotName, slot] of Object.entries(component.slots)) {
-            if (slot.editable) {
-              const editableZone = document.createElement('div')
-              editableZone.classList.add('editable-zone')
-              editableZone.contentEditable = true
-              componentInstance.appendChild(editableZone)
-            } else {
-              const dropZone = createDropZone()
-              if (slotName !== 'default') {
-                dropZone.slot = slotName
+            for (const [slotName, slot] of Object.entries(component.slots)) {
+              if (slot.editable) {
+                const editableZone = document.createElement('div')
+                editableZone.classList.add('editable-zone')
+                editableZone.contentEditable = true
+                componentInstance.appendChild(editableZone)
+              } else {
+                const dropZone = createDropZone()
+                if (slotName !== 'default') {
+                  dropZone.slot = slotName
+                }
+                componentInstance.appendChild(dropZone)
               }
-              componentInstance.appendChild(dropZone)
             }
+
+            if (target.slot) {
+              componentInstance.slot = target.slot
+            }
+            target.replaceWith(componentInstance)
+
+            const dropZone1 = createDropZone()
+            if (componentInstance.slot) {
+              dropZone1.slot = componentInstance.slot
+            }
+            componentInstance.insertAdjacentElement(
+              'beforebegin',
+              dropZone1
+            )
+
+            const dropZone2 = createDropZone()
+            if (componentInstance.slot) {
+              dropZone2.slot = componentInstance.slot
+            }
+            componentInstance.insertAdjacentElement(
+              'afterend',
+              dropZone2
+            )
           }
-
-          if (target.slot) {
-            componentInstance.slot = target.slot
-          }
-          target.replaceWith(componentInstance)
-
-          const dropZone1 = createDropZone()
-          dropZone1.slot = componentInstance.slot
-          componentInstance.insertAdjacentElement(
-            'beforebegin',
-            dropZone1
-          )
-
-          const dropZone2 = createDropZone()
-          dropZone2.slot = componentInstance.slot
-          componentInstance.insertAdjacentElement(
-            'afterend',
-            dropZone2
-          )
         }
+        event.dataTransfer.clearData()
       })
 
       function createDropZone() {
@@ -177,7 +202,7 @@
       }
 
       function getComponent(id) {
-        return components.find(component => component.id === id)
+        return componentsMap.get(id)
       }
     }
 
