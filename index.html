@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <title>Page builder</title>
+  <title>Page Builder</title>
   <style>
     .page {
       border: 1px solid black;
@@ -15,6 +15,14 @@
       border: 1px dashed black;
       background-color: gray;
       height: 2rem;
+    }
+
+    .drop-zone--drag-over {
+      background-color: lightgray;
+    }
+
+    .components > * {
+      margin-bottom: 1rem;
     }
   </style>
 
@@ -100,15 +108,13 @@
         event.preventDefault()
         event.dataTransfer.dropEffect = 'copy'
 
-        // if (!dropZone) {
-        //   dropZone = createDropZone()
-        //   page.appendChild(dropZone)
-        // }
+        event.target.classList.add('drop-zone--drag-over')
       })
 
       page.addEventListener('dragleave', function (event) {
         console.log('dragleave', event)
-        // removeDropZone()
+
+        event.target.classList.remove('drop-zone--drag-over')
       })
 
       page.addEventListener('drop', function (event) {
@@ -154,8 +160,6 @@
             'afterend',
             dropZone2
           )
-
-          // removeDropZone()
         }
       })
 
@@ -181,10 +185,13 @@
   </script>
 </head>
 <body>
+  <h1 style="margin-top: 0;">Page Builder</h1>
+  <h2>Page</h2>
   <div class="page">
     <div class="drop-zone"></div>
   </div>
 
+  <h2>Components</h2>
   <div class="components"></div>
 </body>
 </html>
