@@ -2,12 +2,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "watch": "NODE_ENV=development node node_modules/@sanjo/compose/index.js watch",
-    "build": "NODE_ENV=production node node_modules/@sanjo/compose/index.js",
+    "watch": "cross-env NODE_ENV=development node node_modules/@sanjo/compose/index.js watch",
+    "build": "cross-env NODE_ENV=production node node_modules/@sanjo/compose/index.js",
     "auto-reload": "node node_modules/.bin/auto-reload"
   },
   "devDependencies": {
     "@sanjo/auto-reload": "^1.2.0",
-    "@sanjo/compose": "^1.0.2"
+    "@sanjo/compose": "^1.0.2",
+    "cross-env": "^7.0.3"
   }
 }
