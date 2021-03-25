@@ -6,6 +6,20 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <title>Page Builder</title>
   <style>
+    .container {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .sidebar {
+      flex: 0 0 300px;
+      margin-right: 1rem;
+    }
+
+    .main {
+      flex: 1 1 auto;
+    }
+
     .page {
       border: 1px solid black;
       margin-bottom: 1rem;
@@ -27,14 +41,8 @@
   </style>
 
   <script type="module">
+    import './components.js'
     import { createDOM } from './createDOM.js'
-    import { Component } from './Component.js'
-    import { Component2 } from './Component2.js'
-    import { ComponentText } from './ComponentText.js'
-
-    customElements.define('page-builder-component', Component)
-    customElements.define('page-builder-component2', Component2)
-    customElements.define('page-builder-component-text', ComponentText)
 
     function main() {
       let isDragging = false
@@ -204,6 +212,90 @@
       function getComponent(id) {
         return componentsMap.get(id)
       }
+
+      function exportHTML() {
+        let html = '<script src="components.js"><'
+        html += '/script>\n\n'
+
+        html += generatePageHTML()
+
+        return html
+      }
+
+      function generatePageHTML() {
+        return generatePageHTMLRecursion(page)
+      }
+
+      function generatePageHTMLRecursion(element) {
+        let html = ''
+        let elements = Array.from(element.children)
+        for (const element of elements) {
+          if (element.classList.contains('editable-zone')) {
+            html += element.innerHTML
+          } else if (isComponent(element)) {
+            const tagName = element.tagName.toLowerCase()
+            html += `<${tagName}`
+            const attributes = generateAttributesOutput(element)
+            if (attributes.length >= 1) {
+              html += ' '
+            }
+            html += attributes
+            html += '>'
+            html += generatePageHTMLRecursion(element)
+            html += `</${tagName}>`
+          }
+        }
+        return html
+      }
+
+      function isComponent(element) {
+        const tagName = element.tagName.toLowerCase()
+        const componentIDs = new Set(getComponentIDs())
+        return componentIDs.has(tagName)
+      }
+
+      function getComponentIDs() {
+        return components.map(({id}) => id)
+      }
+
+      function generateAttributesOutput(element) {
+        return filterAttributes(Array.from(element.attributes))
+          .map(generateAttributeString)
+          .join(' ')
+      }
+
+      function filterAttributes(attributes) {
+        return attributes.filter(isIncludedAttribute)
+      }
+
+      function isIncludedAttribute(attribute) {
+        const includedAttributes = new Set()
+        return includedAttributes.has(attribute.name)
+      }
+
+      function generateAttributeString(attribute) {
+        return `${attribute.name}=${attribute.value}`
+      }
+
+      const $save = document.getElementById('save')
+      $save.addEventListener('click', async function (event) {
+        const html = exportHTML()
+        console.log(html)
+        const fileHandle = await showSaveFilePicker({
+          types: [
+            {
+              description: 'HTML',
+              accept: {
+                'text/html': ['.html']
+              }
+            }
+          ]
+        })
+        const writable = await fileHandle.createWritable()
+        await writable.write(html)
+        await writable.close()
+        console.log('a')
+      })
     }
 
     document.addEventListener('DOMContentLoaded', main)
@@ -211,12 +303,21 @@
 </head>
 <body>
   <h1 style="margin-top: 0;">Page Builder</h1>
-  <h2>Page</h2>
-  <div class="page">
-    <div class="drop-zone"></div>
-  </div>
 
-  <h2>Components</h2>
-  <div class="components"></div>
+  <div class="container">
+    <div class="sidebar">
+      <h2 style="margin-top: 0;">Components</h2>
+      <div class="components"></div>
+    </div>
+
+    <div class="main">
+      <h2 style="margin-top: 0;">Page</h2>
+      <div class="page">
+        <div class="drop-zone"></div>
+      </div>
+
+      <button id="save" type="button">Save</button>
+    </div>
+  </div>
 </body>
 </html>
