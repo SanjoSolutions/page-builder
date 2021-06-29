@@ -11,9 +11,13 @@ const template = createTemplate(`
         border: 1px solid black;
         padding: 2rem;
         background-color: yellow;
+        display: flex;
+        flex-row: row;
+        justify-content: space-between;
       }
       
       .box__inner {
+        flex: 0 1 49%;
         box-sizing: border-box;
         border: 1px solid black;
         background-color: white;
@@ -23,11 +27,15 @@ const template = createTemplate(`
       <div class="box__inner">
         <slot></slot>
       </div>
+      
+      <div class="box__inner">
+        <slot name="slot2"></slot>
+      </div>
     </div>
   </template>
 `)
 
-export class ComponentText extends HTMLElement {
+export class ComponentText2 extends HTMLElement {
   constructor() {
     super()
     const templateContent = template.content

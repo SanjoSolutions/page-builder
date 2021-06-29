@@ -6,23 +6,76 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <title>Page Builder</title>
   <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: stretch;
+      height: 100vh;
+      width: 100vw;
+      margin: 0;
+    }
+
+    body > h1 {
+      flex: 0 0 auto;
+      margin-top: 1rem;
+      margin-left: 1rem;
+    }
+
     .container {
+      flex: 1 1 auto;
       display: flex;
       flex-direction: row;
+      align-items: stretch;
+      overflow: hidden;
+      margin-bottom: 1rem;
     }
 
     .sidebar {
       flex: 0 0 300px;
+      overflow-y: auto;
+    }
+
+    .sidebar--left {
       margin-right: 1rem;
+      margin-left: 1rem;
+    }
+
+    .sidebar--right {
+      margin-right: 1rem;
+      margin-left: 1rem;
     }
 
     .main {
       flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main > h2 {
+      flex: 0 0 auto;
     }
 
     .page {
+      flex: 1 1 auto;
       border: 1px solid black;
       margin-bottom: 1rem;
+      overflow-y: auto;
+    }
+
+    .bar {
+      height: 2rem;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      background-color: lightgrey;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .bar > * {
+      margin-right: 0.5rem;
     }
 
     .drop-zone {
@@ -38,274 +91,19 @@
     .components > * {
       margin-bottom: 1rem;
     }
+
+    .element--selected {
+      border: 2px solid red;
+    }
   </style>
 
-  <script type="module">
-    import './components.js'
-    import { createDOM } from './createDOM.js'
-
-    function main() {
-      let isDragging = false
-
-      const components = [
-        {
-          id: 'page-builder-component',
-          html: '<page-builder-component></page-builder-component>',
-          slots: {
-            default: {}
-          }
-        },
-        {
-          id: 'page-builder-component2',
-          html: '<page-builder-component2></page-builder-component2>',
-          slots: {
-            default: {},
-            slot2: {}
-          }
-        },
-        {
-          id: 'page-builder-component-text',
-          html: '<page-builder-component-text></page-builder-component-text>',
-          slots: {
-            default: {
-              editable: true
-            }
-          }
-        }
-      ]
-      const componentsMap = new Map(
-        components.map(component => [component.id, component])
-      )
-
-      const $components = document.querySelector('.components')
-
-      for (const component of components) {
-        const $component = createDOM(component.html).body.children[0]
-        $component.setAttribute('data-id', component.id)
-        $component.draggable = true
-
-        for (const [slotName, slot] of Object.entries(component.slots)) {
-          const dropZone = createDropZone()
-          if (slotName !== 'default') {
-            dropZone.slot = slotName
-          }
-          $component.appendChild(dropZone)
-        }
-
-        $components.appendChild($component)
-      }
-
-      for (const component of $components.children) {
-        component.addEventListener('dragstart', function (event) {
-          console.log('dragstart', event)
-          event.dataTransfer.setData(
-            'text/plain',
-            event.target.getAttribute('data-id')
-          )
-          event.dataTransfer.dropEffect = 'copy'
-        })
-
-        component.addEventListener('dragend', function (event) {
-          console.log('dragend', event)
-        })
-      }
-
-      const page = document.querySelector('.page')
-
-      let dropZone = null
-
-      page.addEventListener('dragover', function (event) {
-        console.log('dragover', event)
-        event.preventDefault()
-
-        const target = event.target
-        if (target.classList.contains('drop-zone')) {
-          const componentId = event.dataTransfer.getData('text/plain')
-          const component = getComponent(componentId)
-          if (component) {
-            event.dataTransfer.dropEffect = 'copy'
-
-            event.target.classList.add('drop-zone--drag-over')
-          }
-        }
-      })
-
-      page.addEventListener('dragleave', function (event) {
-        console.log('dragleave', event)
-
-        const target = event.target
-        if (target.classList.contains('drop-zone')) {
-          const componentId = event.dataTransfer.getData('text/plain')
-          const component = getComponent(componentId)
-          if (component) {
-            target.classList.remove('drop-zone--drag-over')
-          }
-        }
-      })
-
-      page.addEventListener('drop', function (event) {
-        console.log('drop', event)
-        event.preventDefault()
-        const target = event.target
-        if (target.classList.contains('drop-zone')) {
-          const componentId = event.dataTransfer.getData('text/plain')
-          const component = getComponent(componentId)
-          if (component) {
-            const componentHTML = component.html
-            const componentInstance = createDOM(componentHTML).body.children[0]
-
-            for (const [slotName, slot] of Object.entries(component.slots)) {
-              if (slot.editable) {
-                const editableZone = document.createElement('div')
-                editableZone.classList.add('editable-zone')
-                editableZone.contentEditable = true
-                componentInstance.appendChild(editableZone)
-              } else {
-                const dropZone = createDropZone()
-                if (slotName !== 'default') {
-                  dropZone.slot = slotName
-                }
-                componentInstance.appendChild(dropZone)
-              }
-            }
-
-            if (target.slot) {
-              componentInstance.slot = target.slot
-            }
-            target.replaceWith(componentInstance)
-
-            const dropZone1 = createDropZone()
-            if (componentInstance.slot) {
-              dropZone1.slot = componentInstance.slot
-            }
-            componentInstance.insertAdjacentElement(
-              'beforebegin',
-              dropZone1
-            )
-
-            const dropZone2 = createDropZone()
-            if (componentInstance.slot) {
-              dropZone2.slot = componentInstance.slot
-            }
-            componentInstance.insertAdjacentElement(
-              'afterend',
-              dropZone2
-            )
-          }
-        }
-        event.dataTransfer.clearData()
-      })
-
-      function createDropZone() {
-        const dropZone = document.createElement('div')
-        dropZone.classList.add('drop-zone')
-        return dropZone
-      }
-
-      function removeDropZone() {
-        if (dropZone) {
-          dropZone.remove()
-          dropZone = null
-        }
-      }
-
-      function getComponent(id) {
-        return componentsMap.get(id)
-      }
-
-      function exportHTML() {
-        let html = '<script src="components.js"><'
-        html += '/script>\n\n'
-
-        html += generatePageHTML()
-
-        return html
-      }
-
-      function generatePageHTML() {
-        return generatePageHTMLRecursion(page)
-      }
-
-      function generatePageHTMLRecursion(element) {
-        let html = ''
-        let elements = Array.from(element.children)
-        for (const element of elements) {
-          if (element.classList.contains('editable-zone')) {
-            html += element.innerHTML
-          } else if (isComponent(element)) {
-            const tagName = element.tagName.toLowerCase()
-            html += `<${tagName}`
-            const attributes = generateAttributesOutput(element)
-            if (attributes.length >= 1) {
-              html += ' '
-            }
-            html += attributes
-            html += '>'
-            html += generatePageHTMLRecursion(element)
-            html += `</${tagName}>`
-          }
-        }
-        return html
-      }
-
-      function isComponent(element) {
-        const tagName = element.tagName.toLowerCase()
-        const componentIDs = new Set(getComponentIDs())
-        return componentIDs.has(tagName)
-      }
-
-      function getComponentIDs() {
-        return components.map(({id}) => id)
-      }
-
-      function generateAttributesOutput(element) {
-        return filterAttributes(Array.from(element.attributes))
-          .map(generateAttributeString)
-          .join(' ')
-      }
-
-      function filterAttributes(attributes) {
-        return attributes.filter(isIncludedAttribute)
-      }
-
-      function isIncludedAttribute(attribute) {
-        const includedAttributes = new Set()
-        return includedAttributes.has(attribute.name)
-      }
-
-      function generateAttributeString(attribute) {
-        return `${attribute.name}=${attribute.value}`
-      }
-
-      const $save = document.getElementById('save')
-      $save.addEventListener('click', async function (event) {
-        const html = exportHTML()
-        console.log(html)
-        const fileHandle = await showSaveFilePicker({
-          types: [
-            {
-              description: 'HTML',
-              accept: {
-                'text/html': ['.html']
-              }
-            }
-          ]
-        })
-        const writable = await fileHandle.createWritable()
-        await writable.write(html)
-        await writable.close()
-        console.log('a')
-      })
-    }
-
-    document.addEventListener('DOMContentLoaded', main)
-  </script>
+  <script type="module" src="index.js"></script>
 </head>
 <body>
-  <h1 style="margin-top: 0;">Page Builder</h1>
+  <h1>Page Builder</h1>
 
   <div class="container">
-    <div class="sidebar">
+    <div class="sidebar sidebar--left">
       <h2 style="margin-top: 0;">Components</h2>
       <div class="components"></div>
     </div>
@@ -315,8 +113,18 @@
       <div class="page">
         <div class="drop-zone"></div>
       </div>
+      <div class="bar">
+        <button id="save" type="button">Save</button>
+        <button id="load" type="button">Load</button>
+      </div>
+    </div>
 
-      <button id="save" type="button">Save</button>
+    <div class="sidebar sidebar--right">
+      <h2 style="margin-top: 0;">Attributes</h2>
+
+      <div id="attributes">
+
+      </div>
     </div>
   </div>
 </body>
